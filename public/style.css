@@ -2,7 +2,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f8fb;color:#111;}
 .header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:16px 20px;position:relative;min-height:72px;box-shadow:0 6px 22px rgba(10,42,102,.25);}
-.header img.logo-img{position:absolute;left:16px;top:50%;transform:translateY(-50%);height:46px;max-width:160px;object-fit:contain;display:block}
+.header img.logo-img{position:absolute;left:16px;top:50%;transform:translateY(-50%);height:46px;max-width:120px;object-fit:contain;display:block}
 .header h1{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;font-size:24px}
 .container{max-width:1480px;margin:24px auto;background:#fff;padding:24px;border-radius:16px;box-shadow:0 10px 30px rgba(10,42,102,.08)}
 h1,h2{margin:0 0 12px 0}
