@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tombola Allianz Maroc - Inscription</title><link rel="stylesheet" href="/style.css"/></head>
+<body>
+  <div class="header"><img src="/logo-allianz.svg" alt="Allianz" class="logo-img"/><h1>Tombola Allianz Maroc</h1></div>
+  <div class="container">
+    <h2>Étape 1 — Formulaire (tous les champs sont obligatoires)</h2>
+    <form id="entryForm" class="card">
+      <input type="hidden" name="zone" id="zoneHidden"/>
+      <div class="row"><div><label>Nom et Prénom *</label><input type="text" name="name" required/></div><div><label>GSM *</label><input type="tel" name="phone" required/></div></div>
+      <div class="row"><div><label>Mois d’échéance Assurance Auto *</label><input type="month" name="expiry_month" required/></div><div><label>Compagnie d’Assurance *</label><input type="text" name="insurance_company" list="insurers" required/><datalist id="insurers"><option value="Allianz Maroc"></option><option value="AXA"></option><option value="RMA"></option><option value="Wafa Assurance"></option><option value="AtlantaSanad"></option><option value="MAMDA-MCMA"></option></datalist></div></div>
+      <div class="row">
+        
+        <div><label>Ville *</label><select name="city" id="citySelect" required><option value="" disabled selected>— Sélectionner —</option>
+            <option value="MEKNES">MEKNES</option>
+          <option value="FES">FES</option>
+          <option value="TAZA">TAZA</option>
+          <option value="OUJDA">OUJDA</option>
+          <option value="BERKANE">BERKANE</option>
+          <option value="NADOR">NADOR</option>
+          <option value="EL HOCEIMA">EL HOCEIMA</option>
+          <option value="TETOUAN">TETOUAN</option>
+          <option value="TANGER">TANGER</option>
+          <option value="KENITRA">KENITRA</option>
+          <option value="SALE">SALE</option>
+          <option value="RABAT">RABAT</option>
+          <option value="TEMARA">TEMARA</option>
+          <option value="SKHIRATE ET BOUZNIKA">SKHIRATE ET BOUZNIKA</option>
+          <option value="MOHAMMEDIA">MOHAMMEDIA</option>
+          <option value="CASABLANCA">CASABLANCA</option>
+          <option value="FQUIH BEN SALEH ET EL BROUJ">FQUIH BEN SALEH ET EL BROUJ</option>
+          <option value="HAD SOUALEM ET DAR BOUAZZA">HAD SOUALEM ET DAR BOUAZZA</option>
+          <option value="SIDI SMAIL,KHMISS ZEMAMRA, SIDI BENNOUR">SIDI SMAIL,KHMISS ZEMAMRA, SIDI BENNOUR</option>
+          <option value="EL JADIDA ET AZEMMOUR">EL JADIDA ET AZEMMOUR</option>
+          <option value="MEDIOUNA ET TIT MELLIL">MEDIOUNA ET TIT MELLIL</option>
+          <option value="SETTAT">SETTAT</option>
+          <option value="BERRECHID ET DEROUA">BERRECHID ET DEROUA</option>
+          <option value="MARRAKECH">MARRAKECH</option>
+          <option value="LOUDAYA / CHICHAOUA">LOUDAYA / CHICHAOUA</option>
+          <option value="TAMANSOURTE ROUTE SAFI">TAMANSOURTE ROUTE SAFI</option>
+          <option value="AGADIR">AGADIR</option>
+          <option value="INEZGANE">INEZGANE</option>
+          <option value="AIT MELLOUL">AIT MELLOUL</option>
+          <option value="GUELMIM">GUELMIM</option>
+          <option value="LAAYOUN">LAAYOUN</option>
+          <option value="DAKHLA">DAKHLA</option>
+            <option value="AUTRE">Autre</option>
+        </select></div>
+      </div>
+<div><label id="cityOtherLabel" style="display:none">Autres (Ville non listée)</label><input type="text" name="city_other" id="cityOther" placeholder="Saisir la ville si absente de la liste" style="display:none"/></div>
+      <div class="row"><div><label>Quartier *</label><input type="text" name="district" required/></div><div><label>Nom de l’intermédiaire Allianz ayant traité avec vous (si applicable) :</label><input type="text" name="intermediary" placeholder="Optionnel"/></div></div>
+      <div class="card" style="margin-top:16px; background:#fff;"><label class="notice" style="display:block;"><input type="checkbox" name="consent" required/> *Par le biais de ce formulaire, Allianz Maroc collecte vos données personnelles à des fins de prospection commerciale. Ce traitement a fait l’objet d’une déclaration auprès de la CNDP sous le numéro D-M-838/2024. Les données personnelles collectées peuvent être transmises à nos agents généraux conformément à la demande déposée auprès de la CNDP. Vous pouvez nous contacter par courrier postal à l’adresse : Allianz Maroc 166 Boulevard Mohamed Zerktouni 20060, Casablanca, ou par e-mail à l’adresse : client@allianz.ma pour exercer vos droits d’accès, de rectification et d’opposition conformément aux dispositions de la loi 09-08.</label></div>
+(*Champ obligatoire)
+      <div class="center" style="margin-top:16px; display:flex; gap:12px; justify-content:center; align-items:center;"><button type="submit">Continuer ➜</button></div>
+    </form>
+    <div class="footer">Entreprise régie par la loi 17-99 portant sur le code des assurances</div>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    try{var v=localStorage.getItem("allianz_ville"); if(v) document.getElementById("zoneHidden").value=v;}catch(e){}
+    (function(){
+      const sel = document.getElementById('citySelect');
+      const other = document.getElementById('cityOther');
+      const otherLabel = document.getElementById('cityOtherLabel');
+      function toggleOther(){ if(sel && sel.value==='AUTRE'){ other.style.display='block'; otherLabel.style.display='block'; other.required=true; } else { other.style.display='none'; otherLabel.style.display='none'; other.required=false; other.value=''; } }
+      document.addEventListener('DOMContentLoaded', toggleOther); if(sel) sel.addEventListener('change', toggleOther);
+    })();
+  </script>
+</body></html>

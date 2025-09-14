@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Admin — Tombola Allianz Maroc</title><link rel="stylesheet" href="/style.css"/></head>
+<body>
+  <div class="header"><img src="/logo-allianz.svg" alt="Allianz" class="logo-img"/><h1>Espace Admin — Tombola Allianz Maroc</h1></div>
+  <div class="container">
+    <div class="row">
+      <div class="card" style="grid-column:1/-1">
+        <h2>Données</h2>
+        <div id="counts" class="notice">Chargement…</div>
+        <table class="table" id="dataTable"><thead><tr>
+          <th>ID</th><th>Nom & Prénom</th><th>GSM</th><th>Mois d’échéance</th><th>Compagnie</th><th>Ville</th><th>Quartier</th><th>Intermédiaire Allianz</th><th>Ville (stockée)</th><th>Créé</th><th>Lot</th><th>Tirage</th><th>Jour</th>
+        </tr></thead><tbody></tbody></table>
+        <div class="center" style="margin-top:50px"><a href="/admin/export"><button>Exporter CSV</button></a></div>
+      </div>
+
+      <div class="card">
+        <h2>Répartition des lots</h2>
+        <ul id="breakdown" class="notice"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Pondération des lots</h2>
+        <div id="weightsWrap" class="notice">Chargement…</div>
+        <div class="center" style="margin-top:12px">
+          <button id="saveWeightsBtn">Enregistrer</button>
+        </div>
+        <p class="notice">Astuce : un poids à 0 exclut le lot de la pondération (s'il est éligible côté quotas). Si tous les poids = 0, tirage uniforme.</p>
+      </div>
+
+      <div class="card">
+        <h2>Plafonds journaliers (par lot)</h2>
+        <div id="capsWrap" class="notice">Chargement…</div>
+        <div class="center" style="margin-top:12px">
+          <button id="saveCapsBtn">Enregistrer</button>
+        </div>
+        <p class="notice">Laisser vide (ou 0) = illimité. Remise à zéro chaque jour (Fuseau : Africa/Casablanca).</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function req(url, opts){ const res = await fetch(url, opts||{}); if(!res.ok){ let msg; try{msg=(await res.json()).error}catch(e){msg=await res.text()} throw new Error(msg||'Erreur'); } return res.json(); }
+
+    async function loadData(){
+      try{
+        const { rows } = await req('/admin/data');
+        const tb = document.querySelector('#dataTable tbody'); tb.innerHTML=''; let prizeCounts={};
+        rows.forEach(r=>{
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td>${r.id}</td><td>${r.name}</td><td>${r.phone}</td><td>${r.expiry_month||''}</td><td>${r.insurance_company||''}</td><td>${r.city||''}</td><td>${r.district||''}</td><td>${r.intermediary||''}</td><td>${r.zone||''}</td><td>${new Date(r.created_at).toLocaleString()}</td><td>${r.prize||''}</td><td>${r.prize_at?new Date(r.prize_at).toLocaleString():''}</td><td>${r.day||''}</td>`;
+          tb.appendChild(tr); if(r.prize) prizeCounts[r.prize]=(prizeCounts[r.prize]||0)+1;
+        });
+        document.getElementById('counts').textContent = `${rows.length} participations, ${Object.values(prizeCounts).reduce((a,b)=>a+b,0)} tirages`;
+        const br=document.getElementById('breakdown'); br.innerHTML=''; Object.keys(prizeCounts).sort().forEach(k=>{ const li=document.createElement('li'); li.textContent=k+': '+prizeCounts[k]; br.appendChild(li); });
+      }catch(e){ console.error(e); document.getElementById('counts').textContent='Erreur de chargement des données.'; }
+    }
+
+    async function loadWeightsUI(){
+      try{
+        const data = await req('/admin/weights');
+        const wrap = document.getElementById('weightsWrap');
+        const tbl = document.createElement('table');
+        tbl.className = 'table';
+        tbl.innerHTML = '<thead><tr><th>Lot</th><th>Poids</th><th>% (actuel)</th></tr></thead><tbody></tbody>';
+        const tb = tbl.querySelector('tbody');
+        data.weights.forEach(w=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${w.prize}</td>
+            <td><input type="number" min="0" step="0.1" value="${w.weight}" data-prize="${w.prize}" style="width:120px"/></td>
+            <td>${(w.percent||0).toFixed(1)}%</td>`;
+          tb.appendChild(tr);
+        });
+        wrap.innerHTML = '';
+        wrap.appendChild(tbl);
+      }catch(e){
+        console.error(e);
+        document.getElementById('weightsWrap').textContent = 'Erreur de chargement.';
+      }
+    }
+
+    async function saveWeightsUI(){
+      const inputs = Array.from(document.querySelectorAll('#weightsWrap input[data-prize]'));
+      const payload = { weights: {} };
+      inputs.forEach(inp => payload.weights[inp.getAttribute('data-prize')] = Number(inp.value) || 0);
+      try{
+        await req('/admin/weights', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        alert('Pondération enregistrée');
+        loadWeightsUI();
+      }catch(e){ alert('Erreur : ' + e.message); }
+    }
+
+    async function loadCapsUI(){
+      try{
+        const data = await req('/admin/caps');
+        const wrap = document.getElementById('capsWrap');
+        const tbl = document.createElement('table');
+        tbl.className = 'table';
+        tbl.innerHTML = '<thead><tr><th>Lot</th><th>Plafond/jour</th><th>Distribué (aujourd’hui)</th><th>Restant</th></tr></thead><tbody></tbody>';
+        const tb = tbl.querySelector('tbody');
+        data.caps.forEach(c=>{
+          const tr = document.createElement('tr');
+          const capVal = (c.cap==null || c.cap<=0) ? '' : c.cap;
+          const rest = (c.remaining==null) ? '—' : c.remaining;
+          tr.innerHTML = `<td>${c.prize}</td>
+            <td><input type="number" min="0" step="1" value="${capVal}" data-prize="${c.prize}" style="width:120px"/></td>
+            <td>${c.used}</td>
+            <td>${rest}</td>`;
+          tb.appendChild(tr);
+        });
+        wrap.innerHTML = '';
+        wrap.appendChild(tbl);
+      }catch(e){
+        console.error(e);
+        document.getElementById('capsWrap').textContent = 'Erreur de chargement.';
+      }
+    }
+
+    async function saveCapsUI(){
+      const inputs = Array.from(document.querySelectorAll('#capsWrap input[data-prize]'));
+      const payload = { caps: {} };
+      inputs.forEach(inp => {
+        const v = inp.value.trim();
+        payload.caps[inp.getAttribute('data-prize')] = (v === '' ? null : Number(v)||0);
+      });
+      try{
+        await req('/admin/caps', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        alert('Plafonds enregistrés');
+        loadCapsUI();
+      }catch(e){ alert('Erreur : ' + e.message); }
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      loadData();
+      loadWeightsUI();
+      loadCapsUI();
+      const bw = document.getElementById('saveWeightsBtn');
+      const bc = document.getElementById('saveCapsBtn');
+      if (bw) bw.addEventListener('click', saveWeightsUI);
+      if (bc) bc.addEventListener('click', saveCapsUI);
+    });
+  </script>
+</body></html>

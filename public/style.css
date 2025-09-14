@@ -1,0 +1,29 @@
+:root{--brand:#005399;--brand2:#0e3b8a;--accent:#00A0E3;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f8fb;color:#111;}
+.header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:16px 20px;position:relative;min-height:72px;box-shadow:0 6px 22px rgba(10,42,102,.25);}
+.header img.logo-img{position:absolute;left:16px;top:50%;transform:translateY(-50%);height:46px;max-width:240px;object-fit:contain;display:block}
+.header h1{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;font-size:24px}
+.container{max-width:1480px;margin:24px auto;background:#fff;padding:24px;border-radius:16px;box-shadow:0 10px 30px rgba(10,42,102,.08)}
+h1,h2{margin:0 0 12px 0}
+label{display:block;margin:12px 0 6px}
+input,select{width:100%;padding:12px;border:1px solid #d9e1ee;border-radius:10px;outline:none;}
+input:focus,select:focus{border-color:var(--brand)}
+button{background:var(--brand);color:#fff;border:none;padding:12px 18px;border-radius:12px;cursor:pointer;font-weight:600;}
+button:disabled{opacity:.6;cursor:not-allowed}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:#fbfcff;border:1px solid #e7eefb;border-radius:12px;padding:16px;}
+.notice{font-size:.9rem;color:#444;line-height:1.5}
+.center{text-align:center}
+.table{width:100%;border-collapse:collapse;font-size:.95rem;margin-top:12px;}
+.table th,.table td{border:1px solid #e8eef9;padding:8px 10px;text-align:left;}
+.table th{background:#f3f7ff}
+.badge{padding:4px 8px;border-radius:999px;background:#e9f0ff;color:#0a2a66;font-weight:600;font-size:.8rem}
+.footer{margin-top:18px;color:#666;font-size:.85rem}
+canvas{max-width:100%;height:auto}
+.wheel-wrap{display:flex;gap:24px;align-items:center;justify-content:center;flex-direction:column;}
+.wheel-ring{width:480px;height:480px;border-radius:999px;border:10px solid var(--brand);display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px rgba(10,42,102,.18);}
+.winner{display:none;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:1.05rem;box-shadow:0 10px 20px rgba(22,163,74,.25);transform:translateY(0);animation:pop .5s ease;}
+.winner .thumb{width:52px;height:52px;object-fit:contain;background:#fff;border-radius:10px;padding:6px}
+.winner .prize-name{font-weight:900;text-decoration:underline}
+@keyframes pop{from{opacity:.0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}

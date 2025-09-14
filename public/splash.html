@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tombola Allianz Maroc — Accueil</title><link rel="stylesheet" href="/style.css"/></head>
+<body>
+  <div class="header"><img src="/logo-allianz.svg" alt="Allianz" class="logo-img"/><h1>Tombola Allianz Maroc</h1></div>
+  <div class="container" style="text-align:center">
+    <h2>Bienvenue</h2>
+    <img src="/img/gift.svg" alt="cadeau" style="height:72px;margin:6px auto 8px;display:block;opacity:.9">
+    <p>Sélectionnez votre <strong>ville</strong> puis appuyez sur <strong>Commencer</strong>.</p>
+    <div class="row" style="margin:14px 0 6px"><div style="grid-column:1/-1">
+      <label>Ville *</label>
+      <select id="villeSelect" required>
+          <option value="" disabled selected>— Sélectionner —</option>
+          <option value="MEKNES">MEKNES</option>
+          <option value="FES">FES</option>
+          <option value="TAZA">TAZA</option>
+          <option value="OUJDA">OUJDA</option>
+          <option value="BERKANE">BERKANE</option>
+          <option value="NADOR">NADOR</option>
+          <option value="EL HOCEIMA">EL HOCEIMA</option>
+          <option value="TETOUAN">TETOUAN</option>
+          <option value="TANGER">TANGER</option>
+          <option value="KENITRA">KENITRA</option>
+          <option value="SALE">SALE</option>
+          <option value="RABAT">RABAT</option>
+          <option value="TEMARA">TEMARA</option>
+          <option value="SKHIRATE ET BOUZNIKA">SKHIRATE ET BOUZNIKA</option>
+          <option value="MOHAMMEDIA">MOHAMMEDIA</option>
+          <option value="CASABLANCA">CASABLANCA</option>
+          <option value="FQUIH BEN SALEH ET EL BROUJ">FQUIH BEN SALEH ET EL BROUJ</option>
+          <option value="HAD SOUALEM ET DAR BOUAZZA">HAD SOUALEM ET DAR BOUAZZA</option>
+          <option value="SIDI SMAIL,KHMISS ZEMAMRA, SIDI BENNOUR">SIDI SMAIL,KHMISS ZEMAMRA, SIDI BENNOUR</option>
+          <option value="EL JADIDA ET AZEMMOUR">EL JADIDA ET AZEMMOUR</option>
+          <option value="MEDIOUNA ET TIT MELLIL">MEDIOUNA ET TIT MELLIL</option>
+          <option value="SETTAT">SETTAT</option>
+          <option value="BERRECHID ET DEROUA">BERRECHID ET DEROUA</option>
+          <option value="MARRAKECH">MARRAKECH</option>
+          <option value="LOUDAYA / CHICHAOUA">LOUDAYA / CHICHAOUA</option>
+          <option value="TAMANSOURTE ROUTE SAFI">TAMANSOURTE ROUTE SAFI</option>
+          <option value="AGADIR">AGADIR</option>
+          <option value="INEZGANE">INEZGANE</option>
+          <option value="AIT MELLOUL">AIT MELLOUL</option>
+          <option value="GUELMIM">GUELMIM</option>
+          <option value="LAAYOUN">LAAYOUN</option>
+          <option value="DAKHLA">DAKHLA</option>
+          <option value="AUTRE">Autre</option>
+      </select>
+    </div></div>
+    <div class="center" style="margin-top:14px"><button id="startBtn">Commencer ➜</button></div>
+  </div>
+  <script>
+    const btn=document.getElementById('startBtn'); const villeEl=document.getElementById('villeSelect');
+    try{ const v=localStorage.getItem('allianz_ville'); if(v) villeEl.value=v; }catch(e){}
+    btn.addEventListener('click',()=>{ const v=villeEl.value; if(!v){alert('Merci de sélectionner la ville.'); return;} try{localStorage.setItem('allianz_ville',v);}catch(e){} window.location.href='/index.html'; });
+  </script>
+</body></html>

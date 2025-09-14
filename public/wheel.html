@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tombola Allianz Maroc - Roue</title><link rel="stylesheet" href="/style.css"/></head>
+<body>
+  <div class="header"><img src="/logo-allianz.svg" alt="Allianz" class="logo-img"/><h1>Tombola Allianz Maroc</h1></div>
+  <div class="container">
+    <h2>Étape 2 — Roue de la chance</h2>
+    <div class="wheel-wrap card center">
+      <div class="wheel-ring"><canvas id="wheel" width="460" height="460"></canvas></div>
+      <button id="spinBtn">Lancer la roue</button>
+      <div id="result" class="winner"></div>
+      <p class="notice">1 seul tirage par participant.</p>
+      <div style="display:flex; gap:10px; justify-content:center;"><button id="nextBtn" style="display:none;">Participant suivant</button></div>
+    </div>
+  </div>
+  <script src="/wheel.js"></script>
+</body></html>
