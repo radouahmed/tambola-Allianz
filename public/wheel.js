@@ -64,7 +64,7 @@ spinBtn.addEventListener('click', async ()=>{
       spinning=false; MARK_SPUN(); 
       resultEl.style.display='inline-flex'; 
       const img=loadedImgs[serverPrize]; 
-      resultEl.innerHTML=(img?`<img class="thumb" src="${PRIZE_IMAGES[serverPrize]}" alt="${serverPrize}"/>`:'') + 'Félicitations ! 🎉 vous avez gagné "<span class="prize-name">'+serverPrize+'</span>"'; 
+      resultEl.innerHTML=(img?`<img class="thumb" src="${PRIZE_IMAGES[serverPrize]}" alt="${serverPrize}"/>`:'') + 'Félicitations ! 🎉 Vous avez gagné "<span class="prize-name">'+serverPrize+'</span>"'; 
       if(nextBtn){ nextBtn.style.display='inline-block'; }
     } 
   } 
