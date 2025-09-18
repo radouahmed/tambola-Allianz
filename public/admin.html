@@ -7,8 +7,14 @@
       <div class="card" style="grid-column:1/-1">
         <h2>Données</h2>
         <div id="counts" class="notice">Chargement…</div>
+        <div class="center" style="display:flex; gap:8px; justify-content:flex-end; margin:8px 0;">
+          <button id="deleteSelectedBtn">🗑️ Supprimer la sélection</button>
+        </div>
         <table class="table" id="dataTable"><thead><tr>
-          <th>ID</th><th>Nom & Prénom</th><th>GSM</th><th>Mois d’échéance</th><th>Compagnie</th><th>Ville</th><th>Quartier</th><th>Intermédiaire Allianz</th><th>Ville (stockée)</th><th>Créé</th><th>Lot</th><th>Tirage</th><th>Jour</th>
+          <th style="width:36px; text-align:center;">
+            <input type="checkbox" id="chkAll" title="Tout sélectionner"/>
+          </th>
+          <th>ID</th><th>Nom & Prénom</th><th>GSM</th><th>Mois d’échéance</th><th>Compagnie</th><th>Ville</th><th>Quartier</th><th>Intermédiaire Allianz</th><th>Ville (stockée)</th><th>Créé</th><th>Lot</th><th>Tirage</th><th>Jour</th><th>Actions</th>
         </tr></thead><tbody></tbody></table>
         <div id="pager" class="center" style="margin:12px 0"></div>
         <div class="center" style="margin-top:12px"><a href="/admin/export"><button>Exporter CSV (tout)</button></a></div>
@@ -72,6 +78,9 @@
         (data.rows || []).forEach(r => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
+            <td style="text-align:center;">
+              <input type="checkbox" class="chkRow" data-id="${r.id}"/>
+            </td>
             <td>${r.id}</td>
             <td>${r.name}</td>
             <td>${r.phone}</td>
@@ -84,7 +93,10 @@
             <td>${new Date(r.created_at).toLocaleString()}</td>
             <td>${r.prize || ''}</td>
             <td>${r.prize_at ? new Date(r.prize_at).toLocaleString() : ''}</td>
-            <td>${r.day || ''}</td>`;
+            <td>${r.day || ''}</td>
+            <td>
+              <button onclick="deleteOne(${r.id})" title="Supprimer">🗑️</button>
+            </td>`;
           tb.appendChild(tr);
         });
 
@@ -152,6 +164,61 @@
       pager.appendChild(btn('Suivante ›', p === pages, () => { currentPage = Math.min(pages, p + 1); loadData(); }));
       pager.appendChild(btn('Dernière ⟫', p === pages, () => { currentPage = pages; loadData(); }));
     }
+
+    // --- Suppression ---
+    function getSelectedIds(){
+      return Array.from(document.querySelectorAll('.chkRow:checked'))
+        .map(i => Number(i.getAttribute('data-id')))
+        .filter(n => Number.isInteger(n) && n > 0);
+    }
+
+    async function deleteSelected(){
+      const ids = getSelectedIds();
+      if (!ids.length) { alert('Sélectionnez au moins une entrée.'); return; }
+      if (!confirm(`Supprimer ${ids.length} entrées sélectionnées ?`)) return;
+      try{
+        await req('/admin/entries/delete', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ ids })
+        });
+        alert('Supprimé.');
+        currentPage = 1;           // revenir à la première page (optionnel)
+        await loadData();
+        await loadBreakdownTotal();
+      }catch(e){
+        alert('Erreur : ' + (e.message || 'suppression'));
+      }
+    }
+
+    async function deleteOne(id){
+      if (!confirm(`Supprimer l'entrée #${id} ?`)) return;
+      try{
+        await req(`/admin/entry/${id}`, { method: 'DELETE' });
+        await loadData();
+        await loadBreakdownTotal();
+      }catch(e){
+        alert('Erreur : ' + (e.message || 'suppression'));
+      }
+    }
+    window.deleteOne = deleteOne;
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      loadData();
+      loadBreakdownTotal();
+      loadWeightsUI();
+      loadCapsUI();
+      const bw = document.getElementById('saveWeightsBtn');
+      const bc = document.getElementById('saveCapsBtn');
+      if (bw) bw.addEventListener('click', saveWeightsUI);
+      if (bc) bc.addEventListener('click', saveCapsUI);
+      const delSel = document.getElementById('deleteSelectedBtn');
+      if (delSel) delSel.addEventListener('click', deleteSelected);
+      const chkAll = document.getElementById('chkAll');
+      if (chkAll) chkAll.addEventListener('change', ()=>{
+        document.querySelectorAll('.chkRow').forEach(c => c.checked = chkAll.checked);
+      });
+    });
 
     // --- Pondération / Plafonds ---
     async function loadWeightsUI(){
@@ -227,16 +294,5 @@
         loadCapsUI();
       }catch(e){ alert('Erreur : ' + e.message); }
     }
-
-    document.addEventListener('DOMContentLoaded', ()=>{
-      loadData();
-      loadBreakdownTotal();   // ⬅️ répartition globale
-      loadWeightsUI();
-      loadCapsUI();
-      const bw = document.getElementById('saveWeightsBtn');
-      const bc = document.getElementById('saveCapsBtn');
-      if (bw) bw.addEventListener('click', saveWeightsUI);
-      if (bc) bc.addEventListener('click', saveCapsUI);
-    });
   </script>
 </body></html>
