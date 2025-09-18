@@ -5,12 +5,13 @@
   <div class="container">
     <div class="row">
       <div class="card" style="grid-column:1/-1">
-        <div class="center" style="margin-top:50px"><a href="/admin/export"><button>Exporter CSV</button></a></div>
         <h2>Données</h2>
         <div id="counts" class="notice">Chargement…</div>
         <table class="table" id="dataTable"><thead><tr>
           <th>ID</th><th>Nom & Prénom</th><th>GSM</th><th>Mois d’échéance</th><th>Compagnie</th><th>Ville</th><th>Quartier</th><th>Intermédiaire Allianz</th><th>Ville (stockée)</th><th>Créé</th><th>Lot</th><th>Tirage</th><th>Jour</th>
         </tr></thead><tbody></tbody></table>
+        <div id="pager" class="center" style="margin:12px 0"></div>
+        <div class="center" style="margin-top:12px"><a href="/admin/export"><button>Exporter CSV (tout)</button></a></div>
       </div>
 
       <div class="card">
@@ -39,22 +40,105 @@
   </div>
 
   <script>
-    async function req(url, opts){ const res = await fetch(url, opts||{}); if(!res.ok){ let msg; try{msg=(await res.json()).error}catch(e){msg=await res.text()} throw new Error(msg||'Erreur'); } return res.json(); }
+    // --- Pagination state ---
+    let currentPage = 1;
+    const pageSize = 10; // 10 IDs par page
+    let totalRows = 0;
 
-    async function loadData(){
-      try{
-        const { rows } = await req('/admin/data');
-        const tb = document.querySelector('#dataTable tbody'); tb.innerHTML=''; let prizeCounts={};
-        rows.forEach(r=>{
-          const tr=document.createElement('tr');
-          tr.innerHTML=`<td>${r.id}</td><td>${r.name}</td><td>${r.phone}</td><td>${r.expiry_month||''}</td><td>${r.insurance_company||''}</td><td>${r.city||''}</td><td>${r.district||''}</td><td>${r.intermediary||''}</td><td>${r.zone||''}</td><td>${new Date(r.created_at).toLocaleString()}</td><td>${r.prize||''}</td><td>${r.prize_at?new Date(r.prize_at).toLocaleString():''}</td><td>${r.day||''}</td>`;
-          tb.appendChild(tr); if(r.prize) prizeCounts[r.prize]=(prizeCounts[r.prize]||0)+1;
-        });
-        document.getElementById('counts').textContent = `${rows.length} participations, ${Object.values(prizeCounts).reduce((a,b)=>a+b,0)} tirages`;
-        const br=document.getElementById('breakdown'); br.innerHTML=''; Object.keys(prizeCounts).sort().forEach(k=>{ const li=document.createElement('li'); li.textContent=k+': '+prizeCounts[k]; br.appendChild(li); });
-      }catch(e){ console.error(e); document.getElementById('counts').textContent='Erreur de chargement des données.'; }
+    // --- Helper fetch robuste (détecte HTML inattendu) ---
+    async function req(url, opts){
+      const res = await fetch(url, opts||{});
+      const ct = (res.headers.get('content-type')||'').toLowerCase();
+      const isJSON = ct.includes('application/json');
+      if (!res.ok) {
+        const msg = isJSON ? (await res.json()).error : await res.text();
+        throw new Error(msg || 'Erreur');
+      }
+      if (!isJSON) {
+        // Par ex., fallback HTML si l’ordre des routes serveur est mauvais
+        const txt = await res.text();
+        throw new Error('Réponse inattendue (HTML reçu). Vérifie que /admin/data est déclaré AVANT le fallback app.get("*") côté serveur.');
+      }
+      return res.json();
     }
 
+    // --- Chargement des données paginées ---
+    async function loadData() {
+      try {
+        const data = await req(`/admin/data?page=${currentPage}&pageSize=${pageSize}`);
+        totalRows = data.total || 0;
+
+        const tb = document.querySelector('#dataTable tbody');
+        tb.innerHTML = '';
+        let prizeCounts = {};
+        (data.rows || []).forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${r.id}</td>
+            <td>${r.name}</td>
+            <td>${r.phone}</td>
+            <td>${r.expiry_month || ''}</td>
+            <td>${r.insurance_company || ''}</td>
+            <td>${r.city || ''}</td>
+            <td>${r.district || ''}</td>
+            <td>${r.intermediary || ''}</td>
+            <td>${r.zone || ''}</td>
+            <td>${new Date(r.created_at).toLocaleString()}</td>
+            <td>${r.prize || ''}</td>
+            <td>${r.prize_at ? new Date(r.prize_at).toLocaleString() : ''}</td>
+            <td>${r.day || ''}</td>`;
+          tb.appendChild(tr);
+          if (r.prize) prizeCounts[r.prize] = (prizeCounts[r.prize] || 0) + 1;
+        });
+
+        document.getElementById('counts').textContent =
+          `${totalRows} participations (page ${data.page}/${Math.max(1, Math.ceil(totalRows / pageSize))})`;
+
+        const br = document.getElementById('breakdown');
+        br.innerHTML = '';
+        Object.keys(prizeCounts).sort().forEach(k => {
+          const li = document.createElement('li');
+          li.textContent = k + ': ' + prizeCounts[k];
+          br.appendChild(li);
+        });
+
+        renderPager();
+      } catch (e) {
+        console.error(e);
+        document.getElementById('counts').textContent = 'Erreur de chargement des données.';
+      }
+    }
+
+    // --- Rendu pagination ---
+    function renderPager() {
+      const pager = document.getElementById('pager');
+      const pages = Math.max(1, Math.ceil(totalRows / pageSize));
+      const p = currentPage;
+
+      const btn = (label, disabled, onClick) => {
+        const b = document.createElement('button');
+        b.textContent = label;
+        b.disabled = !!disabled;
+        b.style.margin = '0 6px';
+        b.addEventListener('click', onClick);
+        return b;
+      };
+
+      pager.innerHTML = '';
+      pager.appendChild(btn('⟪ Première', p === 1, () => { currentPage = 1; loadData(); }));
+      pager.appendChild(btn('‹ Précédente', p === 1, () => { currentPage = Math.max(1, p - 1); loadData(); }));
+
+      const info = document.createElement('span');
+      info.className = 'badge';
+      info.style.margin = '0 8px';
+      info.textContent = `Page ${p} / ${pages}`;
+      pager.appendChild(info);
+
+      pager.appendChild(btn('Suivante ›', p === pages, () => { currentPage = Math.min(pages, p + 1); loadData(); }));
+      pager.appendChild(btn('Dernière ⟫', p === pages, () => { currentPage = pages; loadData(); }));
+    }
+
+    // --- Pondération / Plafonds (inchangés) ---
     async function loadWeightsUI(){
       try{
         const data = await req('/admin/weights');
