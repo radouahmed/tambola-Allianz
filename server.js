@@ -118,7 +118,7 @@ app.use(express.static(path.join(__dirname, 'public'), { index:false }));
 function adminAuth(req, res, next) {
   const user = basicAuth(req);
   if (!user || user.name !== ADMIN_USER || user.pass !== ADMIN_PASS) {
-    res.set('WWW-Authenticate', 'Basic realm=\"Admin Area\"');
+    res.set('WWW-Authenticate', 'Basic realm="Admin Area"');
     return res.status(401).send('Unauthorized');
   }
   next();
@@ -215,13 +215,27 @@ app.post('/api/spin', (req, res) => {
 app.get('/admin', adminAuth, (req,res)=> res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 app.get('/admin/data', adminAuth, (req, res) => {
-  const q = `SELECT e.id, e.name, e.phone, e.expiry_month, e.insurance_company, e.city, e.district, e.intermediary, e.zone, e.created_at,
-                    s.prize, s.created_at AS prize_at, s.day
-             FROM entries e LEFT JOIN spins s ON s.entry_id = e.id
-             ORDER BY e.created_at DESC, e.id DESC`;
-  db.all(q, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Erreur serveur.' });
-    res.json({ rows });
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 10));
+  const offset = (page - 1) * pageSize;
+
+  db.get('SELECT COUNT(*) AS total FROM entries', [], (cntErr, cntRow) => {
+    if (cntErr) return res.status(500).json({ error: 'Erreur serveur.' });
+    const total = Number(cntRow?.total || 0);
+
+    const q = `
+      SELECT e.id, e.name, e.phone, e.expiry_month, e.insurance_company, e.city,
+             e.district, e.intermediary, e.zone, e.created_at,
+             s.prize, s.created_at AS prize_at, s.day
+      FROM entries e
+      LEFT JOIN spins s ON s.entry_id = e.id
+      ORDER BY e.created_at DESC, e.id DESC
+      LIMIT ? OFFSET ?
+    `;
+    db.all(q, [pageSize, offset], (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Erreur serveur.' });
+      res.json({ rows, total, page, pageSize });
+    });
   });
 });
 
@@ -310,7 +324,7 @@ app.post('/admin/caps', adminAuth, (req,res)=>{
   });
 });
 
-// Fallback
+// Fallback (tout à la fin)
 app.get('*', (req,res)=> res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 ensureTables(() => {
