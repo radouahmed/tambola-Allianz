@@ -56,9 +56,7 @@ function ensureTables(cb){
 
 // Add 'day' column if missing (ignore error if exists)
 function addSpinsDayColumn(cb){
-  db.run(`ALTER TABLE spins ADD COLUMN day TEXT`, [], (err) => {
-    cb && cb(); // ignore duplicate column error
-  });
+  db.run(`ALTER TABLE spins ADD COLUMN day TEXT`, [], () => cb && cb());
 }
 
 // === Prize Weights (admin configurable) ===
@@ -211,9 +209,10 @@ app.post('/api/spin', (req, res) => {
   });
 });
 
-// Admin
+// Admin UI
 app.get('/admin', adminAuth, (req,res)=> res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
+// Admin: paginated data
 app.get('/admin/data', adminAuth, (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 10));
@@ -239,6 +238,7 @@ app.get('/admin/data', adminAuth, (req, res) => {
   });
 });
 
+// Admin: CSV export (full)
 app.get('/admin/export', adminAuth, (req, res) => {
   const q = `SELECT e.id, e.name, e.phone, e.expiry_month, e.insurance_company, e.city, e.district, e.intermediary, e.zone, e.created_at,
                     COALESCE(s.prize, '') AS prize, COALESCE(s.created_at, '') AS prize_at, COALESCE(s.day,'') AS day
@@ -321,6 +321,25 @@ app.post('/admin/caps', adminAuth, (req,res)=>{
   stmt.finalize(err=>{
     if (err) return res.status(500).json({ error: 'Erreur de mise à jour.' });
     res.json({ ok: true });
+  });
+});
+
+// Admin: summary (global totals & breakdown)
+app.get('/admin/summary', adminAuth, (req, res) => {
+  const out = {};
+  db.get('SELECT COUNT(*) AS total_entries FROM entries', [], (e1, r1) => {
+    if (e1) return res.status(500).json({ error: 'Erreur serveur.' });
+    out.total_entries = Number(r1?.total_entries || 0);
+    db.get('SELECT COUNT(*) AS total_spins FROM spins', [], (e2, r2) => {
+      if (e2) return res.status(500).json({ error: 'Erreur serveur.' });
+      out.total_spins = Number(r2?.total_spins || 0);
+      db.all('SELECT prize, COUNT(*) AS cnt FROM spins GROUP BY prize ORDER BY prize', [], (e3, rows) => {
+        if (e3) return res.status(500).json({ error: 'Erreur serveur.' });
+        out.breakdown = {};
+        (rows || []).forEach(x => out.breakdown[x.prize] = Number(x.cnt) || 0);
+        res.json(out);
+      });
+    });
   });
 });
 
