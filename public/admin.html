@@ -15,7 +15,7 @@
       </div>
 
       <div class="card">
-        <h2>Répartition des lots</h2>
+        <h2>Répartition des lots (global)</h2>
         <ul id="breakdown" class="notice"></ul>
       </div>
 
@@ -55,9 +55,8 @@
         throw new Error(msg || 'Erreur');
       }
       if (!isJSON) {
-        // Par ex., fallback HTML si l’ordre des routes serveur est mauvais
         const txt = await res.text();
-        throw new Error('Réponse inattendue (HTML reçu). Vérifie que /admin/data est déclaré AVANT le fallback app.get("*") côté serveur.');
+        throw new Error('Réponse inattendue (HTML reçu). Vérifie que /admin/* est déclaré AVANT le fallback app.get("*") côté serveur.');
       }
       return res.json();
     }
@@ -70,7 +69,6 @@
 
         const tb = document.querySelector('#dataTable tbody');
         tb.innerHTML = '';
-        let prizeCounts = {};
         (data.rows || []).forEach(r => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -88,24 +86,41 @@
             <td>${r.prize_at ? new Date(r.prize_at).toLocaleString() : ''}</td>
             <td>${r.day || ''}</td>`;
           tb.appendChild(tr);
-          if (r.prize) prizeCounts[r.prize] = (prizeCounts[r.prize] || 0) + 1;
         });
 
         document.getElementById('counts').textContent =
           `${totalRows} participations (page ${data.page}/${Math.max(1, Math.ceil(totalRows / pageSize))})`;
 
-        const br = document.getElementById('breakdown');
-        br.innerHTML = '';
-        Object.keys(prizeCounts).sort().forEach(k => {
-          const li = document.createElement('li');
-          li.textContent = k + ': ' + prizeCounts[k];
-          br.appendChild(li);
-        });
-
         renderPager();
       } catch (e) {
         console.error(e);
         document.getElementById('counts').textContent = 'Erreur de chargement des données.';
+      }
+    }
+
+    // --- Répartition globale (tous les tirages) ---
+    async function loadBreakdownTotal(){
+      try{
+        const data = await req('/admin/summary');
+        const br = document.getElementById('breakdown');
+        br.innerHTML = '';
+
+        // Totaux (en tête)
+        const liHead = document.createElement('li');
+        liHead.style.fontWeight = '700';
+        liHead.textContent = `Total entrées : ${data.total_entries || 0} | Total tirages : ${data.total_spins || 0}`;
+        br.appendChild(liHead);
+
+        const breakdown = data.breakdown || {};
+        const keys = Object.keys(breakdown).sort();
+        keys.forEach(k => {
+          const li = document.createElement('li');
+          li.textContent = `${k}: ${breakdown[k]}`;
+          br.appendChild(li);
+        });
+      }catch(e){
+        console.error(e);
+        document.getElementById('breakdown').innerHTML = '<li>Erreur de chargement.</li>';
       }
     }
 
@@ -138,7 +153,7 @@
       pager.appendChild(btn('Dernière ⟫', p === pages, () => { currentPage = pages; loadData(); }));
     }
 
-    // --- Pondération / Plafonds (inchangés) ---
+    // --- Pondération / Plafonds ---
     async function loadWeightsUI(){
       try{
         const data = await req('/admin/weights');
@@ -215,6 +230,7 @@
 
     document.addEventListener('DOMContentLoaded', ()=>{
       loadData();
+      loadBreakdownTotal();   // ⬅️ répartition globale
       loadWeightsUI();
       loadCapsUI();
       const bw = document.getElementById('saveWeightsBtn');
