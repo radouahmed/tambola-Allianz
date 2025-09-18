@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
 
+// ⚠️ Assure-toi que cette liste correspond aux lots de la roue côté front
 const PRIZES = ['Porte-clés','Pare-soleil','Casquette','Support téléphone','Repose-tête','Pins'];
 
 const dbFile = process.env.DB_PATH || path.join(__dirname, 'tombola.db');
@@ -338,6 +339,50 @@ app.get('/admin/summary', adminAuth, (req, res) => {
         out.breakdown = {};
         (rows || []).forEach(x => out.breakdown[x.prize] = Number(x.cnt) || 0);
         res.json(out);
+      });
+    });
+  });
+});
+
+// Admin: DELETE one entry (with its spin if exists)
+app.delete('/admin/entry/:id', adminAuth, (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'id invalide' });
+
+  db.serialize(() => {
+    db.run('BEGIN');
+    db.run('DELETE FROM spins WHERE entry_id = ?', [id], function (e1) {
+      if (e1) { db.run('ROLLBACK'); return res.status(500).json({ error: 'Erreur suppression tirage' }); }
+      db.run('DELETE FROM entries WHERE id = ?', [id], function (e2) {
+        if (e2) { db.run('ROLLBACK'); return res.status(500).json({ error: 'Erreur suppression entrée' }); }
+        db.run('COMMIT', (e3) => {
+          if (e3) return res.status(500).json({ error: 'Erreur commit' });
+          res.json({ ok: true });
+        });
+      });
+    });
+  });
+});
+
+// Admin: bulk delete entries
+app.post('/admin/entries/delete', adminAuth, (req, res) => {
+  const ids = (req.body?.ids || [])
+    .map(n => Number(n))
+    .filter(n => Number.isInteger(n) && n > 0);
+
+  if (!ids.length) return res.status(400).json({ error: 'ids manquants' });
+
+  const ph = ids.map(() => '?').join(',');
+  db.serialize(() => {
+    db.run('BEGIN');
+    db.run(`DELETE FROM spins WHERE entry_id IN (${ph})`, ids, function (e1) {
+      if (e1) { db.run('ROLLBACK'); return res.status(500).json({ error: 'Erreur suppression tirages' }); }
+      db.run(`DELETE FROM entries WHERE id IN (${ph})`, ids, function (e2) {
+        if (e2) { db.run('ROLLBACK'); return res.status(500).json({ error: 'Erreur suppression entrées' }); }
+        db.run('COMMIT', (e3) => {
+          if (e3) return res.status(500).json({ error: 'Erreur commit' });
+          res.json({ ok: true });
+        });
       });
     });
   });
